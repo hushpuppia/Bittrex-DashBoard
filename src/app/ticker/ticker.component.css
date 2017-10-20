@@ -1,10 +1,10 @@
-.tableA{
-    width:380px;
+.tableT{
+    width:280px;
     display:inline-block;
     padding: 5px 5px 5px 5px;
     vertical-align: top;   
 }
-.tableB{
+.tableC{
     width:600px;
     display:inline-block;
     padding: 5px 5px 5px 5px;

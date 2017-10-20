@@ -7,20 +7,28 @@ export class BtcChartPipe implements PipeTransform {
 
   transform(chart: any, args?: any): any {
     let chartBTC = [];
+
     let i = 0;
     for (let it in chart) {
-      if (it.substring(0, 3) == 'BTC') {
-        let j = Object.keys(chart[it]).length-1;
-        // console.log(j);
-        chartBTC[i] = {}
-        chartBTC[i].coin = it.substring(4, it.length);
-        chartBTC[i].date = chart[it][j].date;  //new Date(chart[it][0].date*1000);
-        chartBTC[i].open = Math.round(chart[it][j].open);
-        chartBTC[i].close = chart[it][j].close;
-        chartBTC[i].variation = ((chart[it][j].high - chart[it][j].low)/(chart[it][j].high))*100;
-        chartBTC[i].change = ((chart[it][j].close - chart[it][j].open)/(chart[it][j].close))*100;
-        i = i + 1;
+      let l = chart[it].length; 
+      // console.log(l);
+      chartBTC[i] = {};
+      chartBTC[i].coin = it;
+      // console.log(it);
+      let volsum = 0;
+      for (let j = 0; j < l; ++j) {
+        volsum += chart[it][l - j - 1].V;
       }
+      chartBTC[i].volume5min = chart[it][l - 1].V;
+      chartBTC[i].volspike5min = parseFloat(((chart[it][l - 1].V / volsum) * 600).toFixed(2));
+      let volsum15min = 0;
+      for (let j = 0; j < 3; ++j) {
+        volsum15min += chart[it][l - j - 1].V;
+      }
+      chartBTC[i].volume15min = volsum15min;
+      chartBTC[i].volspike15min = parseFloat(((volsum15min / volsum) * 200).toFixed(2));
+      console.log(chartBTC[i]);
+      i = i + 1;
     }
     return chartBTC
 

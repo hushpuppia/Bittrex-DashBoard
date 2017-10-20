@@ -2,32 +2,29 @@
 Current Timestamp: {{date}}
 <div *ngIf='dataChannel'>
     <div class='tableA'>
+        <!-- {{dataChannel.chartView|json}} -->
         <div style="height: 27pt; display:inline-block">
-            <button (click)="getTicker()">Refresh Ticker</button>
-            <!-- <button (click)="stopDashboard()">Stop Dashboard</button> {{dataChannel.chartData}} -->
+            <button (click)="getTickerData()">Refresh Ticker</button>
+            <button (click)="getChartData()">Get Chart Data</button>
+            <div style="color: red">{{message}}</div>
+            {{dataChannel.tickerProgress}}
+            {{dataChannel.chartProgress}}
         </div>
-        <p-dataTable [value]="dataChannel.tickerView|btcTicker" [tableStyle]="{'font-size':'9pt'}">
-            <!-- [tableStyle]="" -->
-            <p-column field="coin" header="Coin" [sortable]="true"></p-column>
-            <p-column field="coinname" header="CoinName" [sortable]="true"></p-column>
-            <p-column field="price" header="Price" [sortable]="true"></p-column>
-            <p-column field="change" header="Change" [sortable]="true"></p-column>
-        </p-dataTable>
-    </div>
-    <div class='tableB'>
-        <div style="height: 27pt; display:inline-block">
-            <button (click)="getChartData()">Refresh Chart</button>
-            <p-dropdown [options]="durations" [(ngModel)]="duration"></p-dropdown>
-            Loading: {{(dataChannel.progress*100)|round}} %
+        <p></p>
+        <div class="tableT">
+            <p-dataTable [value]="dataChannel.tickerView|btcTicker" [tableStyle]="{'font-size':'9pt'}">
+                <p-column field="coin" header="Coin" [sortable]="true"></p-column>
+                <p-column field="coinname" header="CoinName" [sortable]="true"></p-column>
+                <p-column field="price" header="Price" [sortable]="true"></p-column>
+            </p-dataTable>
         </div>
-        <p-dataTable [value]="dataChannel.chartView|btcChart: this.dataChannel.durationActive" [tableStyle]="{'font-size':'9pt'}">
-            <p-column field="coin" header="Coin" [sortable]="true"></p-column>
-            <p-column field="date" header="Time Stamp" [sortable]="true"></p-column>
-            <p-column field="open" header="Open" [sortable]="true"></p-column>
-            <p-column field="close" header="Close" [sortable]="true"></p-column>
-            <p-column field="variation" header="Variation" [sortable]="true"></p-column>
-            <p-column field="change" header="Change" [sortable]="true"></p-column>
-        </p-dataTable>
+        <!-- {{{dataChannel.chartView|btcChart)|json}} -->
+        <div class="tableC">
+            <p-dataTable [value]="dataChannel.chartView|btcChart" [tableStyle]="{'font-size':'9pt'}">
+                <p-column field="coin" header="Coin" [sortable]="true"></p-column>
+                <p-column field="volspike5min" header="Vol Surge 5 min" [sortable]="true"></p-column>
+                <p-column field="volspike15min" header="Vol Surge 15 min" [sortable]="true"></p-column>
+            </p-dataTable>
+        </div>
     </div>
-
 </div>

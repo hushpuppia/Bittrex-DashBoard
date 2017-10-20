@@ -12,10 +12,12 @@ export class GetPublicDataService {
   i: number = 0;
   dataChannel: any;
   currencyInfo: any;
+  marketInfo: any;
 
   api = {
-    'ticker': 'https://poloniex.com/public?command=returnTicker',
-    'volume24h': 'https://poloniex.com/public?command=return24hVolume',
+    'ticker': 'https://bittrex.com/api/v1.1/public/getticker',
+    'markets': 'https://bittrex.com/api/v1.1/public/getmarkets',
+    'market24h': 'https://bittrex.com/api/v1.1/public/getmarketsummaries',
     'orderBook': {
       'base': 'https://poloniex.com/public?command=returnOrderBook',
       'param':
@@ -24,9 +26,9 @@ export class GetPublicDataService {
         'depth'
       ]
     },
-    'currencyList': ' https://poloniex.com/public?command=returnCurrencies',
+    'currencyList': 'https://bittrex.com/api/v1.1/public/getcurrencies',
     'chartData': {
-      'base': 'https://poloniex.com/public?command=returnChartData',
+      'base': 'https://bittrex.com/Api/v2.0/pub/market/GetTicks?',
       'param': [
         'currencyPair',
         'start',
@@ -37,91 +39,108 @@ export class GetPublicDataService {
   };
 
   constructor(private http: Http) {
+    this.dataChannel = {
+      'tickerView': {},
+      'chartView': {},
+      'progress': 0,
+      'marketsAvailable': false,
+      'tickerViewFlag': false,
+      'tickerProgress': 0,
+      'chartProgress': 0
+    };
     this.getCurrencies()
       .subscribe(data => {
         this.currencyInfo = data;
       });
-    this.dataChannel = {
-      'tickerView': {},
-      'chartView': {},
-      'progress': 0
-    };
+    this.getMarkets()
+      .subscribe(data => {
+        this.marketInfo = data;
+        this.dataChannel.marketsAvailable = true;
+      });
+    this.ticker = {};
   }
 
   getCurrencies() {
     return this.http.get(this.api.currencyList)
-      .map(res => res.json());
+      .map(res => res.json().result)
+  }
+
+  getMarkets() {
+    return this.http.get(this.api.markets)
+      .map(res => res.json().result);
   }
 
   getTickerData() {
-    let bindingFunction = (function () {
-      this.http.get(this.api.ticker)
-        .subscribe(data => {
-          this.ticker = JSON.parse(data._body);
-          this.updateTicker()
-          this.updateTickerView();
-        });
-    }).bind(this);
-    bindingFunction();
-  }
-
-  updateTicker() {
-    for (let it in this.ticker) {
-      if (it.substring(0, 3) == 'USD') {
-        let coin = it.substring(5, it.length);
-        if (this.currencyInfo[coin]) {
-          this.ticker[it]['coinname'] = ((this.currencyInfo[coin]).name);
-        }
-      }
-      else {
-        let coin = it.substring(4, it.length);
-        if (this.currencyInfo[coin]) {
-          this.ticker[it]['coinname'] = ((this.currencyInfo[coin]).name);
-        }
-      }
-    }
-  }
-
-  updateTickerView() {
-    let tickerView: any = {};
-    for (let it in this.ticker) {
-      tickerView[it] = {};
-      tickerView[it]['coinname'] = this.ticker[it]['coinname'];
-      tickerView[it]['last'] = this.ticker[it]['last'];
-      tickerView[it]['percentChange'] = this.ticker[it]['percentChange'];
-    }
-    this.dataChannel.tickerView = tickerView;
-  }
-
-  async getChartData(start, end, period) {
-    let tmp;
-    if (this.ticker) {
-      let chartView = {};
-      let i = Object.keys(this.ticker).length;
-      const c = Object.keys(this.ticker).length;
-      this.dataChannel.progress = 1 - i / c;
-      for (let it in this.ticker) {
-        let bindingFunction = (function () {
-          let url = this.api.chartData.base + '&currencyPair=' + it + '&start=' + start + '&end=' + end + '&period=300';
+    this.dataChannel.tickerProgress = 0;
+    if (this.dataChannel.marketsAvailable) {
+      let i = this.marketInfo.length;
+      const l = i;
+        for (let it in this.marketInfo) {
+        let coin = this.marketInfo[it];
+        let url = this.api.ticker + '?market=' + coin.BaseCurrency + '-' + coin.MarketCurrency;
+        if (coin.BaseCurrency == 'BTC') {
           this.http.get(url)
+            .map(res => res.json().result)
             .subscribe(data => {
-              chartView[it] = JSON.parse(data['_body']);
               i = i - 1;
-              this.dataChannel.progress = 1 - i / c;
-              if (i == 0) {
-                this.dataChannel.chartView = chartView;
+              // console.log(coin.MarketCurrency);
+              this.dataChannel.tickerProgress = parseFloat(((1 - i / l) * 100).toFixed(2));
+              // console.log(i);
+              if (data) {
+                this.ticker[coin.MarketCurrency] = data;
+                // console.log(data);  
+                this.ticker[coin.MarketCurrency]['coinname'] = this.marketInfo[it]['MarketCurrencyLong'];
+                this.ticker[coin.MarketCurrency]['MarketCurrency'] = this.marketInfo[it]['MarketCurrency'];
+                this.ticker[coin.MarketCurrency]['BaseCurrency'] = this.marketInfo[it]['BaseCurrency'];
+                if (i == 0) {
+                  this.dataChannel.tickerView = this.ticker;
+                  this.dataChannel.tickerViewFlag = true;
+                  console.log('up');
+                }
               }
             });
-        }).bind(this);
-        await setTimeout(bindingFunction, 0);
+        }
+        else {
+          i = i - 1;
+        }
       }
+      this.http.get(this.api.market24h)
+        .map(res => res.json())
+        .subscribe(data => {
+          // console.log(data);
+        });
+      // for (let it in this.marketInfo) {
+
+      // }
     }
     else {
-      let bindingFunction = (function () {
-        this.getChartData(start, end, period);
-      }).bind(this);
-      setTimeout(bindingFunction, 2000);
-      return tmp;
+      setTimeout(this.getTickerData(), 1000);
+      console.log('wait');
+    }
+  }
+
+  getChartData() {
+    this.dataChannel.chartProgress = 0;
+    let g = Object.keys(this.dataChannel.tickerView).length;
+    console.log(g);
+    const h = g;
+    let chartView = {};
+    for (let it in this.dataChannel.tickerView) {
+      let coin = this.dataChannel.tickerView[it];
+      let interval = + new Date();
+      let url = this.api.chartData.base + 'marketName=' + coin['BaseCurrency'] + '-' + coin['MarketCurrency'] + '&tickInterval=fiveMin&_=' + interval;
+      this.http.get(url)
+        .map(res => res.json())
+        .subscribe(data => {
+          g = g - 1;
+          this.dataChannel.chartProgress = ((1 - (g / h)) * 100).toFixed(2);
+          let l = data.result.length;
+          chartView[coin['MarketCurrency']] = data.result.slice(l - 60, l);
+          if (g == 0) {
+            this.dataChannel.chartView = chartView;
+            console.log('done');
+          }
+        });
     }
   }
 }

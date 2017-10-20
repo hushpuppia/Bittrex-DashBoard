@@ -5,17 +5,17 @@ import { Pipe, PipeTransform } from '@angular/core';
 })
 export class BtcTickerPipe implements PipeTransform {
 
+
   transform(ticker: any): any {
+    // console.log(ticker);
     let tickerBTC = [];
     let i = 0;
     for (let it in ticker) {
-      if (it.substring(0,3) == 'BTC') {
+      if (ticker[it].BaseCurrency == 'BTC') {
         tickerBTC[i] = {}
-        tickerBTC[i].coin = it.substring(4,it.length);
-        tickerBTC[i].id = ticker[it].id;
-        tickerBTC[i].price = ticker[it].last;
-        tickerBTC[i].change = (ticker[it].percentChange)*100;
-        tickerBTC[i].coinname = ticker[it].coinname;             
+        tickerBTC[i].coin = it;
+        tickerBTC[i].price = ticker[it].Last;
+        tickerBTC[i].coinname = ticker[it].coinname;
         i = i + 1;
       }
     }
